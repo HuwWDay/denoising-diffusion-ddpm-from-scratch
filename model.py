@@ -119,8 +119,30 @@ def timestep_embedding(t: torch.Tensor, dim: int, max_period: int = 10000) -> to
         
     return embedding
 
-# Step 10 - init_tiny_unet (not yet solved)
-# TODO: implement
+# Step 10 - init_tiny_unet
+import torch
+import torch.nn.functional as F
+
+def init_tiny_unet(in_ch: int = 1, hidden: int = 16, time_dim: int = 16, seed: int = 0) -> dict:
+    torch.manual_seed(seed)
+    std = 0.02
+
+    params = {
+        "conv_in_w": torch.randn(hidden, in_ch, 3, 3) * std,
+        "conv_in_b": torch.zeros(hidden),
+        "time_mlp_w": torch.randn(hidden, time_dim) * std,
+        "time_mlp_b": torch.zeros(hidden),
+        "conv_mid_w": torch.randn(hidden, hidden, 3, 3) * std,
+        "conv_mid_b": torch.zeros(hidden),
+        "conv_out_w": torch.randn(in_ch, hidden, 3, 3) * std,
+        "conv_out_b": torch.zeros(in_ch),
+    }
+
+    # Enable gradients for training
+    for tensor in params.values():
+        tensor.requires_grad_(True)
+
+    return params
 
 # Step 11 - tiny_unet_forward (not yet solved)
 # TODO: implement
