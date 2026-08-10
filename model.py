@@ -83,8 +83,41 @@ def diffusion_training_loss(model, x0, t, noise, alphas_cumprod):
     noise_pred = model(x_t, t)
     return noise_prediction_loss(noise_pred, noise)
 
-# Step 9 - timestep_embedding (not yet solved)
-# TODO: implement
+# Step 9 - timestep_embedding
+import math
+import torch
+import torch.nn.functional as F
+
+def timestep_embedding(t: torch.Tensor, dim: int, max_period: int = 10000) -> torch.Tensor:
+    """
+    Create sinusoidal timestep embeddings.
+
+    Args:
+        t: A 1D Tensor of shape (B,) containing timestep indices.
+        dim: The dimension of the output embedding.
+        max_period: Controls the minimum frequency of the embeddings.
+
+    Returns:
+        A Tensor of shape (B, dim) containing the positional embeddings.
+    """
+    half_dim = dim // 2
+    
+    # Calculate angular frequencies: exp(-log(max_period) * i / half_dim)
+    freqs = torch.exp(
+        -math.log(max_period) * torch.arange(start=0, end=half_dim, dtype=torch.float32, device=t.device) / half_dim
+    )
+    
+    # Outer product between timesteps and frequencies: (B, 1) * (1, half_dim) -> (B, half_dim)
+    args = t[:, None].float() * freqs[None, :]
+    
+    # Concatenate sine and cosine components along the feature dimension
+    embedding = torch.cat([torch.sin(args), torch.cos(args)], dim=-1)
+    
+    # Pad with a zero if the requested dimension is odd
+    if dim % 2 == 1:
+        embedding = F.pad(embedding, (0, 1))
+        
+    return embedding
 
 # Step 10 - init_tiny_unet (not yet solved)
 # TODO: implement

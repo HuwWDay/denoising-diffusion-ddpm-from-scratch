@@ -18,7 +18,7 @@ python scaffold.py
 - [x] **6.** build_diffusion_schedule
 - [x] **7.** noise_prediction_loss
 - [x] **8.** diffusion_training_loss
-- [ ] **9.** timestep_embedding
+- [x] **9.** timestep_embedding
 - [ ] **10.** init_tiny_unet
 - [ ] **11.** tiny_unet_forward
 - [ ] **12.** make_blob_dataset
