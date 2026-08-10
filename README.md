@@ -17,7 +17,7 @@ python scaffold.py
 - [x] **5.** q_sample
 - [x] **6.** build_diffusion_schedule
 - [x] **7.** noise_prediction_loss
-- [ ] **8.** diffusion_training_loss
+- [x] **8.** diffusion_training_loss
 - [ ] **9.** timestep_embedding
 - [ ] **10.** init_tiny_unet
 - [ ] **11.** tiny_unet_forward
