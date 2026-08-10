@@ -349,8 +349,26 @@ def ddpm_sample_loop(params: dict, schedule: dict, shape: tuple, seed: int = 0) 
         
     return x
 
-# Step 19 - sample_quality_mse (not yet solved)
-# TODO: implement
+# Step 19 - sample_quality_mse
+import torch
+
+def sample_quality_mse(samples: torch.Tensor, dataset: torch.Tensor) -> float:
+    """
+    Compute the average minimum mean-squared error (MSE) across all samples
+    relative to the closest matching image in the reference dataset.
+    """
+    min_mses = []
+    
+    for sample in samples:
+        # Vectorized MSE across all dataset images for the current sample
+        # (sample - dataset) shape: (N_dataset, C, H, W)
+        mses = ((sample - dataset) ** 2).mean(dim=(1, 2, 3))
+        
+        # Store the minimum MSE distance to any image in the dataset
+        min_mses.append(mses.min())
+        
+    # Mean of the minimum MSEs converted to a Python float
+    return float(torch.stack(min_mses).mean().item())
 
 # Step 20 - ddpm_experiment (not yet solved)
 # TODO: implement
