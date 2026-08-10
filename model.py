@@ -144,8 +144,28 @@ def init_tiny_unet(in_ch: int = 1, hidden: int = 16, time_dim: int = 16, seed: i
 
     return params
 
-# Step 11 - tiny_unet_forward (not yet solved)
-# TODO: implement
+# Step 11 - tiny_unet_forward
+import torch
+import torch.nn.functional as F
+
+def tiny_unet_forward(x: torch.Tensor, t: torch.Tensor, params: dict) -> torch.Tensor:
+    # 1. Initial 3x3 convolution with padding=1 to preserve spatial dimensions
+    h = F.conv2d(x, params['conv_in_w'], params['conv_in_b'], padding=1)
+    
+    # 2. Get sinusoidal timestep embeddings and project via Linear + ReLU
+    time_dim = params['time_mlp_w'].shape[1]
+    temb = timestep_embedding(t, time_dim)
+    temb = F.relu(F.linear(temb, params['time_mlp_w'], params['time_mlp_b']))
+    
+    # 3. Add broadcasted time embedding to feature map: (B, C) -> (B, C, 1, 1)
+    h = h + temb[:, :, None, None]
+    
+    # 4. Non-linearity followed by middle 3x3 convolution with padding=1
+    h = F.relu(h)
+    h = F.relu(F.conv2d(h, params['conv_mid_w'], params['conv_mid_b'], padding=1))
+    
+    # 5. Output 3x3 convolution to project back to image channels (in_ch)
+    return F.conv2d(h, params['conv_out_w'], params['conv_out_b'], padding=1)
 
 # Step 12 - make_blob_dataset (not yet solved)
 # TODO: implement
