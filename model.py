@@ -65,8 +65,13 @@ def build_diffusion_schedule(T: int = 100, beta_start: float = 1e-4, beta_end: f
     out["T"] = T 
     return out
 
-# Step 7 - noise_prediction_loss (not yet solved)
-# TODO: implement
+# Step 7 - noise_prediction_loss
+import torch
+import torch.nn.functional as F
+
+def noise_prediction_loss(noise_pred, noise):
+    # TODO: MSE between predicted and true noise
+    return ((noise-noise_pred)**2).mean()
 
 # Step 8 - diffusion_training_loss (not yet solved)
 # TODO: implement
