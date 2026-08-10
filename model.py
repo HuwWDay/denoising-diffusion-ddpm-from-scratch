@@ -167,8 +167,35 @@ def tiny_unet_forward(x: torch.Tensor, t: torch.Tensor, params: dict) -> torch.T
     # 5. Output 3x3 convolution to project back to image channels (in_ch)
     return F.conv2d(h, params['conv_out_w'], params['conv_out_b'], padding=1)
 
-# Step 12 - make_blob_dataset (not yet solved)
-# TODO: implement
+# Step 12 - make_blob_dataset
+import torch
+
+def make_blob_dataset(n: int = 128, size: int = 8, seed: int = 0) -> torch.Tensor:
+    torch.manual_seed(seed)
+    
+    radius = size // 4
+    min_c = radius
+    max_c = size - radius
+    
+    # Grid of coordinates (y, x) for distance calculations
+    y_coords = torch.arange(size, dtype=torch.float32).view(1, size, 1)
+    x_coords = torch.arange(size, dtype=torch.float32).view(1, 1, size)
+    
+    images = torch.zeros((n, 1, size, size), dtype=torch.float32)
+    
+    for i in range(n):
+        # Draw center (cy, cx) within valid bounds
+        center = torch.randint(min_c, max_c, (2,))
+        cy, cx = center[0].item(), center[1].item()
+        
+        # Calculate squared distance from center: (y - cy)^2 + (x - cx)^2
+        dist_sq = (y_coords - cy) ** 2 + (x_coords - cx) ** 2
+        
+        # Create filled disk mask (inclusive radius check)
+        disk_mask = dist_sq <= (radius ** 2)
+        images[i, 0] = disk_mask.float()
+        
+    return images
 
 # Step 13 - ddpm_train_step (not yet solved)
 # TODO: implement
