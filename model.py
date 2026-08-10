@@ -324,8 +324,30 @@ def ddpm_p_sample(x_t: torch.Tensor, t: torch.Tensor, params: dict, schedule: di
     
     return x_prev
 
-# Step 18 - ddpm_sample_loop (not yet solved)
-# TODO: implement
+# Step 18 - ddpm_sample_loop
+import torch
+
+def ddpm_sample_loop(params: dict, schedule: dict, shape: tuple, seed: int = 0) -> torch.Tensor:
+    # 1. Seed RNG and initialize x from standard normal distribution N(0, I)
+    torch.manual_seed(seed)
+    x = torch.randn(shape)
+    
+    T = schedule["T"]
+    B = shape[0]
+    
+    # Determine execution device based on model weights
+    device = next(iter(params.values())).device
+    x = x.to(device)
+    
+    # 2. Iterate backward through timesteps T-1 down to 0
+    for t in reversed(range(T)):
+        # Create a 1D tensor of shape (B,) filled with current timestep t
+        t_batch = torch.full((B,), t, device=device, dtype=torch.long)
+        
+        # Perform single reverse step: x_{t} -> x_{t-1}
+        x = ddpm_p_sample(x, t_batch, params, schedule)
+        
+    return x
 
 # Step 19 - sample_quality_mse (not yet solved)
 # TODO: implement
