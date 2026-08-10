@@ -301,8 +301,28 @@ def ddpm_p_mean_variance(x_t: torch.Tensor, t: torch.Tensor, eps: torch.Tensor, 
     
     return mean, variance, x0_hat
 
-# Step 17 - ddpm_p_sample (not yet solved)
-# TODO: implement
+# Step 17 - ddpm_p_sample
+import torch
+import torch.nn.functional as F
+
+def ddpm_p_sample(x_t: torch.Tensor, t: torch.Tensor, params: dict, schedule: dict, noise: torch.Tensor = None) -> torch.Tensor:
+    # 1. Predict noise using the trained tiny UNet
+    eps = tiny_unet_forward(x_t, t, params)
+    
+    # 2. Compute reverse posterior mean and variance
+    mean, var, _ = ddpm_p_mean_variance(x_t, t, eps, schedule)
+    
+    # 3. Sample Gaussian noise if not provided
+    if noise is None:
+        noise = torch.randn_like(x_t)
+        
+    # 4. Zero out noise at step t = 0 (t == 0 mask shaped (B, 1, 1, 1))
+    nonzero_mask = (t != 0).float().view(-1, *([1] * (x_t.ndim - 1)))
+    
+    # 5. Reverse step sampling: x_{t-1} = mean + sqrt(var) * noise (for t > 0)
+    x_prev = mean + nonzero_mask * torch.sqrt(var) * noise
+    
+    return x_prev
 
 # Step 18 - ddpm_sample_loop (not yet solved)
 # TODO: implement
