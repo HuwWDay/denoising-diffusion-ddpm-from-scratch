@@ -260,11 +260,46 @@ def train_ddpm(dataset: torch.Tensor, params: dict, schedule: dict, num_steps: i
         
     return params, history
 
-# Step 15 - predict_x0_from_eps (not yet solved)
-# TODO: implement
+# Step 15 - predict_x0_from_eps
+import torch
+import torch.nn.functional as F
 
-# Step 16 - ddpm_p_mean_variance (not yet solved)
-# TODO: implement
+def predict_x0_from_eps(x_t, t, eps, alphas_cumprod):
+    # TODO: invert the q_sample equation for x0
+    alphabar = extract_into_batch(alphas_cumprod, t, x_t)
+    x0_hat = (x_t - torch.sqrt(1-alphabar)*eps)/torch.sqrt(alphabar)
+    return x0_hat
+
+# Step 16 - ddpm_p_mean_variance
+import torch
+import torch.nn.functional as F
+
+def ddpm_p_mean_variance(x_t: torch.Tensor, t: torch.Tensor, eps: torch.Tensor, schedule: dict):
+    alphas = schedule["alphas"]
+    alphas_cumprod = schedule["alphas_cumprod"]
+    betas = schedule["betas"]
+    
+    # 1. Estimate clean image x0 from noise prediction eps and clamp to [-1, 1]
+    x0_hat = predict_x0_from_eps(x_t, t, eps, alphas_cumprod).clamp(-1.0, 1.0)
+    
+    # 2. Extract schedule coefficients for step t
+    alpha_t = extract_into_batch(alphas, t, x_t.shape)
+    beta_t = extract_into_batch(betas, t, x_t.shape)
+    alpha_cumprod_t = extract_into_batch(alphas_cumprod, t, x_t.shape)
+    
+    # 3. Compute alpha_cumprod_{t-1} handling t == 0 boundary condition (alpha_cumprod_{-1} = 1.0)
+    alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)
+    alpha_cumprod_t_prev = extract_into_batch(alphas_cumprod_prev, t, x_t.shape)
+    
+    # 4. Compute posterior mean mu_t(x_t, x0_hat)
+    coef_x0 = torch.sqrt(alpha_cumprod_t_prev) * beta_t / (1.0 - alpha_cumprod_t)
+    coef_xt = torch.sqrt(alpha_t) * (1.0 - alpha_cumprod_t_prev) / (1.0 - alpha_cumprod_t)
+    mean = coef_x0 * x0_hat + coef_xt * x_t
+    
+    # 5. Fixed variance choice sigma^2_t = beta_t
+    variance = beta_t
+    
+    return mean, variance, x0_hat
 
 # Step 17 - ddpm_p_sample (not yet solved)
 # TODO: implement
