@@ -197,8 +197,46 @@ def make_blob_dataset(n: int = 128, size: int = 8, seed: int = 0) -> torch.Tenso
         
     return images
 
-# Step 13 - ddpm_train_step (not yet solved)
-# TODO: implement
+# Step 13 - ddpm_train_step
+import torch
+import torch.nn.functional as F
+
+def ddpm_train_step(params: dict, x0: torch.Tensor, schedule: dict, lr: float = 1e-2, seed: int = 0) -> tuple[dict, float]:
+    # 1. Seed RNG for reproducible t and noise sampling
+    torch.manual_seed(seed)
+    
+    B = x0.shape[0]
+    T = schedule['T']
+    alphas_cumprod = schedule['alphas_cumprod']
+    
+    # 2. Sample timesteps t ~ Uniform{0..T-1} of shape (B,) on x0's device
+    t = torch.randint(0, T, (B,), device=x0.device)
+    
+    # 3. Sample noise ~ N(0, I) matching shape and device of x0
+    noise = torch.randn_like(x0)
+    
+    # 4. Zero existing gradients before forward/backward pass
+    for p in params.values():
+        if p.grad is not None:
+            p.grad.zero_()
+            
+    # 5. Compute noise prediction loss using the model closure
+    model_fn = lambda x, step_t: tiny_unet_forward(x, step_t, params)
+    loss = diffusion_training_loss(model_fn, x0, t, noise, alphas_cumprod)
+    
+    # 6. Backpropagate gradients
+    loss.backward()
+    
+    # 7. Functional SGD parameter update creating detached new leaf tensors
+    new_params = {}
+    for name, p in params.items():
+        if p.grad is not None:
+            p_new = (p - lr * p.grad).detach().requires_grad_(True)
+        else:
+            p_new = p.clone().detach().requires_grad_(True)
+        new_params[name] = p_new
+        
+    return new_params, float(loss.item())
 
 # Step 14 - train_ddpm (not yet solved)
 # TODO: implement
